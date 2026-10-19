@@ -16,6 +16,23 @@ npm run dev                  # http://localhost:3000
 npm test                     # unit tests (ZIP lookup, cost math, OpenEI parsing, bill helpers)
 ```
 
+## Deploy to Google Cloud Run
+
+From [Cloud Shell](https://shell.cloud.google.com) (no local install needed):
+
+```bash
+git clone -b claude/nifty-ride-rf99q8 https://github.com/salvadorguzman224-cmyk/joule.ai.git && cd joule.ai
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com
+printf '%s' 'YOUR_ANTHROPIC_KEY' | gcloud secrets create anthropic-api-key --data-file=-
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+  --member="serviceAccount:$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+gcloud run deploy joule-ai --source . --region us-central1 --allow-unauthenticated \
+  --set-secrets=ANTHROPIC_API_KEY=anthropic-api-key:latest
+```
+
+The `Dockerfile` builds a standalone Next.js server listening on port 8080.
+
 ## How it works
 
 | Piece | Where |
